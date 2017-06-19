@@ -29,3 +29,5 @@ RESOURCES += \
     icon.qrc
 
 RC_FILE = icon/logo.rc
+
+QMAKE_CXXFLAGS += -std=c++11

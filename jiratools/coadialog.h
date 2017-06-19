@@ -69,6 +69,8 @@ public:
 private slots:
     void on_pushButton_clicked();
 
+    void on_chkQa_toggled(bool checked);
+
 private:
     bool login();
     bool spider();
@@ -81,10 +83,12 @@ private:
     QString getTaskTitle(const QString& strHtml);
     QString ToUtf8(const QString &str);
     void WriteToFile(const QString& strFile, const QString& strText);
-    void filterData(std::list<stTaskId>& listTask);
+    void filterData(const QString& strHead, std::list<stTaskId>& listTask);
     void getTaskInfo(std::list<stTaskId>& listTask);
     void outputResult(std::list<stTaskId>& listTask);
     void getBeginEndTime(uint& begin, uint& end);
+    void updateUI();
+    void enableCtrl(bool bEnabled);
 
     static bool compareMapValueDesc(const PAIR &a, const PAIR &b);
     static bool compareTaskDesc(const stTaskId& a, const stTaskId& b);
@@ -99,6 +103,8 @@ private:
     std::map<QString, uint> m_mapTask;
     std::list<stTaskId> m_listTask;
     eDepartment m_ePart;
+    std::map<QString, QString> m_mapDepartment;
+    std::map<QString, QString> m_mapQaDepartment;
 };
 
 #endif // COADIALOG_H

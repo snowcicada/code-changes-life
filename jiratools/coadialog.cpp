@@ -21,7 +21,7 @@ COaDialog::COaDialog(QWidget *parent) :
     ui->setupUi(this);
     setWindowFlags(Qt::WindowCloseButtonHint);
     setFixedSize(this->width(), this->height());
-    setWindowTitle(tr("Jira工具 v1.1"));
+    setWindowTitle(tr("Jira工具 v1.2"));
 
     //init
     CCurl::GlobalInit();
@@ -36,6 +36,73 @@ COaDialog::COaDialog(QWidget *parent) :
     int year = QDate::currentDate().year();
     int index = year - BEGIN_YEAR;
     ui->comboYear->setCurrentIndex(index);
+
+    updateUI();
+
+    //部门名称
+    m_mapDepartment[tr("P18")] = "NEX";
+    m_mapDepartment[tr("P18运营组")] = "MXOPERATIONS";
+    m_mapDepartment[tr("P20")] = "DF";
+    m_mapDepartment[tr("P20运营组")] = "DFOPERATINS";
+    m_mapDepartment[tr("P22运营组")] = "DY";
+    m_mapDepartment[tr("P22（道友请留步）")] = "PRO";
+    m_mapDepartment[tr("P23")] = "MOW";
+    m_mapDepartment[tr("P23运营组")] = "MWO";
+    m_mapDepartment[tr("P25运营组")] = "JJ";
+    m_mapDepartment[tr("P26")] = "JQB";
+    m_mapDepartment[tr("P26运营组")] = "PDJQB";
+    m_mapDepartment[tr("P27")] = "NSY";
+    m_mapDepartment[tr("P28运营组")] = "JZMY";
+    m_mapDepartment[tr("T08")] = "BBC";
+    m_mapDepartment[tr("产品部")] = "PRODUCT";
+    m_mapDepartment[tr("人力资源部")] = "HR";
+    m_mapDepartment[tr("原味三国")] = "YWSG";
+    m_mapDepartment[tr("商务部")] = "BUSINESS";
+    m_mapDepartment[tr("客服部")] = "SERVICE";
+    m_mapDepartment[tr("市场部")] = "MARKETING";
+    m_mapDepartment[tr("平台开发部")] = "PS";
+    m_mapDepartment[tr("技术部")] = "TECH";
+    m_mapDepartment[tr("美术部")] = "ART";
+    m_mapDepartment[tr("行政部")] = "ADMINISTRATION";
+    m_mapDepartment[tr("财务部")] = "FINANCIAL";
+
+    ui->comboDepartment->addItem(tr("无"));
+    for (auto it : m_mapDepartment) {
+        ui->comboDepartment->addItem(it.first);
+    }
+    ui->comboDepartment->setCurrentIndex(0);
+
+    //QA部门名称,URL编码，为了方便，网上手动转换的
+    m_mapQaDepartment[tr("P18")] = "%E9%AA%8C%E6%94%B6%E8%80%85+%3D+";//验收者
+    m_mapQaDepartment[tr("P22")] = "%e9%aa%8c%e6%94%b6%e4%ba%ba+%3d+";//验收人
+    m_mapQaDepartment[tr("P23")] = "%E9%AA%8C%E6%94%B6%E8%80%85+%3D+";//验收者
+    m_mapQaDepartment[tr("P26")] = "%E9%AA%8C%E6%94%B6%E8%80%85+%3D+";//验收者
+    m_mapQaDepartment[tr("P27")] = "%e9%aa%8c%e6%94%b6%e5%91%98+%3d+";//验收员
+    m_mapQaDepartment[tr("原味三国")] = "%E9%AA%8C%E6%94%B6%E8%80%85+%3D+";//验收者
+
+    ui->comboQaDepartment->addItem(tr("无"));
+    for (auto it : m_mapQaDepartment) {
+        ui->comboQaDepartment->addItem(it.first);
+    }
+    ui->comboQaDepartment->setCurrentIndex(0);
+
+    //配置
+    QSettings settings("jiratools.ini", QSettings::IniFormat);
+    ui->lineUser->setText(settings.value("jiratools/user").toString());
+    QString strPwdEncode = settings.value("jiratools/pwd").toString();
+    QString strPwdUncode = QByteArray::fromHex(QByteArray::fromBase64(strPwdEncode.toLatin1()));
+    ui->linePwd->setText(strPwdUncode);
+    qDebug() << strPwdEncode;
+    qDebug() << strPwdUncode;
+    if (settings.contains("jiratools/department")) {
+        ui->comboDepartment->setCurrentIndex(settings.value("jiratools/department").toInt());
+    }
+    if (settings.contains("jiratools/qa")) {
+        ui->chkQa->setChecked(settings.value("jiratools/qa").toBool());
+    }
+    if (settings.contains("jiratools/qadepartment")) {
+        ui->comboQaDepartment->setCurrentIndex(settings.value("jiratools/qadepartment").toInt());
+    }
 }
 
 COaDialog::~COaDialog()
@@ -49,40 +116,36 @@ void COaDialog::on_pushButton_clicked()
     m_mapTask.clear();
     m_listTask.clear();
 
-    if (ui->lineUser->text().isEmpty())
-    {
-        QMessageBox::warning(this, tr("提示"), tr("请输入大侠的用户名"));
+    if (ui->lineUser->text().isEmpty()) {
+        QMessageBox::warning(this, tr("提示"), tr("请输入用户名"));
         return;
     }
 
-    if (ui->linePwd->text().isEmpty())
-    {
-        QMessageBox::warning(this, tr("提示"), tr("请输入大侠的密码"));
+    if (ui->linePwd->text().isEmpty()) {
+        QMessageBox::warning(this, tr("提示"), tr("请输入密码"));
         return;
     }
 
-    if (ui->rdoDesign->isChecked())
-    {
-        m_ePart = Part_Design;
-    }
-    else if (ui->rdoProgram->isChecked())
-    {
-        m_ePart = Part_Program;
-    }
-    else if (ui->rdoQa->isChecked())
-    {
-        m_ePart = Part_Qa;
-    }
-
-    if (Part_None == m_ePart)
-    {
+    if (ui->comboDepartment->currentIndex() == 0) {
         QMessageBox::warning(this, tr("提示"), tr("请选择部门"));
         return;
     }
 
-    ui->comboQuarter->setEnabled(false);
-    ui->comboYear->setEnabled(false);
-    ui->pushButton->setEnabled(false);
+    if (ui->chkQa->isChecked() && ui->comboQaDepartment->currentIndex() == 0) {
+        QMessageBox::warning(this, tr("提示"), tr("QA请选择部门"));
+        return;
+    }
+
+    //保存配置
+    QString strPwd = ui->linePwd->text().toLatin1().toHex().toBase64().data();
+    QSettings settings("jiratools.ini", QSettings::IniFormat);
+    settings.setValue("jiratools/user", ui->lineUser->text());
+    settings.setValue("jiratools/pwd", strPwd);
+    settings.setValue("jiratools/department", ui->comboDepartment->currentIndex());
+    settings.setValue("jiratools/qa", ui->chkQa->isChecked());
+    settings.setValue("jiratools/qadepartment", ui->comboQaDepartment->currentIndex());
+
+    enableCtrl(false);
 
     if (!login())
     {
@@ -90,7 +153,7 @@ void COaDialog::on_pushButton_clicked()
         return;
     }
 
-    if (Part_Design == m_ePart || Part_Program == m_ePart)
+    if (!ui->chkQa->isChecked())
     {
         if (!spider())
         {
@@ -105,13 +168,14 @@ void COaDialog::on_pushButton_clicked()
         }
     }
 
-    filterData(m_listTask);
+    QString strDepartment = ui->comboDepartment->currentText();
+    QString strHead = m_mapDepartment[strDepartment];
+
+    filterData(strHead, m_listTask);
     if (m_listTask.empty())
     {
         QMessageBox::warning(this, tr("提示"), tr("没有数据"));
-        ui->comboQuarter->setEnabled(true);
-        ui->comboYear->setEnabled(true);
-        ui->pushButton->setEnabled(true);
+        enableCtrl(true);
         return;
     }
 
@@ -119,12 +183,8 @@ void COaDialog::on_pushButton_clicked()
 
     outputResult(m_listTask);
 
-    ui->comboQuarter->setEnabled(true);
-    ui->comboYear->setEnabled(true);
-    ui->pushButton->setEnabled(true);
+    enableCtrl(true);
     ui->progressBar->setValue(0);
-
-    QMessageBox::warning(this, tr("成功"), tr("成功为大侠批量导出%1年%2的任务单").arg(ui->comboYear->currentText()).arg(ui->comboQuarter->currentText()));
 }
 
 bool COaDialog::login()
@@ -198,7 +258,8 @@ bool COaDialog::spiderQa()
         return false;
     }
 
-    strFieldInfo = "jqlQuery=%E9%AA%8C%E6%94%B6%E8%80%85+%3D+currentUser%28%29&runQuery=true&autocomplete=on";
+    QString strQa = m_mapQaDepartment[ui->comboQaDepartment->currentText()];
+    strFieldInfo = tr("jqlQuery=%1currentUser%28%29&runQuery=true&autocomplete=on").arg(strQa);
     bRet = m_curl.Post("http://jira.woobest.com/secure/IssueNavigator!executeAdvanced.jspa", strFieldInfo, strHtml);
     if (!bRet)
     {
@@ -368,7 +429,7 @@ bool COaDialog::compareTaskDesc(const stTaskId& a, const stTaskId& b)
     return a.date > b.date;
 }
 
-void COaDialog::filterData(std::list<stTaskId>& listTask)
+void COaDialog::filterData(const QString &strHead, std::list<stTaskId>& listTask)
 {
     uint begin = 0, end = 0;
     getBeginEndTime(begin, end);
@@ -376,7 +437,7 @@ void COaDialog::filterData(std::list<stTaskId>& listTask)
     listTask.clear();
     for (std::map<QString, uint>::iterator it = m_mapTask.begin(); it != m_mapTask.end(); ++it)
     {
-        if (it->second >= begin && it->second <= end)
+        if (it->second >= begin && it->second <= end && it->first.startsWith(strHead))
         {
             listTask.push_back(stTaskId(it->first, it->second));
         }
@@ -453,4 +514,24 @@ void COaDialog::getBeginEndTime(uint& begin, uint& end)
     QDateTime dtEnd = QDateTime::fromString(strEnd, "yyyy/MM/dd");
     begin = dtBegin.toTime_t();
     end = dtEnd.toTime_t();
+}
+
+void COaDialog::updateUI()
+{
+    ui->comboQaDepartment->setVisible(ui->chkQa->isChecked());
+}
+
+void COaDialog::enableCtrl(bool bEnabled)
+{
+    ui->comboQuarter->setEnabled(bEnabled);
+    ui->comboYear->setEnabled(bEnabled);
+    ui->comboDepartment->setEnabled(bEnabled);
+    ui->comboQaDepartment->setEnabled(bEnabled);
+    ui->chkQa->setEnabled(bEnabled);
+    ui->pushButton->setEnabled(bEnabled);
+}
+
+void COaDialog::on_chkQa_toggled(bool checked)
+{
+    updateUI();
 }
