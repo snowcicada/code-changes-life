@@ -13,7 +13,7 @@
 #include <QtGui>
 
 #define UNKNOWN_STATE "unknown"
-#define APP_VERSION "Jira工具 v1.3"
+#define APP_VERSION "Jira工具 v1.2"
 
 COaDialog::COaDialog(QWidget *parent) :
     QDialog(parent),
