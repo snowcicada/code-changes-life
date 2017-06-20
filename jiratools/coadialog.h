@@ -17,14 +17,6 @@
 #include <list>
 #include "ccurl.h"
 
-enum eDepartment
-{
-    Part_None,
-    Part_Design,
-    Part_Program,
-    Part_Qa
-};
-
 struct stTaskId
 {
     QString id;
@@ -87,8 +79,11 @@ private:
     void getTaskInfo(std::list<stTaskId>& listTask);
     void outputResult(std::list<stTaskId>& listTask);
     void getBeginEndTime(uint& begin, uint& end);
+    void initUI();
     void updateUI();
     void enableCtrl(bool bEnabled);
+    void readSettings();
+    void writeSettings();
 
     static bool compareMapValueDesc(const PAIR &a, const PAIR &b);
     static bool compareTaskDesc(const stTaskId& a, const stTaskId& b);
@@ -102,7 +97,6 @@ private:
     CCurl m_curl;
     std::map<QString, uint> m_mapTask;
     std::list<stTaskId> m_listTask;
-    eDepartment m_ePart;
     std::map<QString, QString> m_mapDepartment;
     std::map<QString, QString> m_mapQaDepartment;
 };

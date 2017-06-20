@@ -8,7 +8,8 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = ../../jiratools/bin/JiraTools
+DESTDIR = ../jiratools/bin/
+TARGET = JiraTools-v1.3
 TEMPLATE = app
 
 
