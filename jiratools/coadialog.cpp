@@ -13,7 +13,8 @@
 #include <QtGui>
 
 #define UNKNOWN_STATE "unknown"
-#define APP_VERSION "Jira工具 v1.2"
+#define APP_VERSION "Jira工具 v1.3"
+#define ZIP_FILENAME tr("Jira工具v1.3.zip")
 
 COaDialog::COaDialog(QWidget *parent) :
     QDialog(parent),
@@ -401,19 +402,39 @@ void COaDialog::outputResult(std::list<stTaskId>& listTask)
     //std::sort(listTask.begin(), listTask.end(), compareTaskDesc);
     listTask.sort();
 
-    QFile file("task.txt");
+    QString strFileName;
+    if (ui->chkQa->isChecked()) {
+        strFileName = tr("%1年%2%3QA任务单(%4).txt").
+                arg(ui->comboYear->currentText()).
+                arg(ui->comboQuarter->currentText()).
+                arg(ui->comboDepartment->currentText()).
+                arg(ui->lineUser->text());
+    } else {
+        strFileName = tr("%1年%2%3任务单(%4).txt").
+                arg(ui->comboYear->currentText()).
+                arg(ui->comboQuarter->currentText()).
+                arg(ui->comboDepartment->currentText()).
+                arg(ui->lineUser->text());
+    }
+
+    QFile file(strFileName);
     if (!file.open(QFile::Truncate | QFile::WriteOnly))
     {
         return;
     }
 
     QString strLine;
+    bool bHasDate = ui->chkHasDate->isChecked();
     for (std::list<stTaskId>::iterator it = listTask.begin(); it != listTask.end(); ++it)
     {
         stTaskId& task = *it;
         if (task.state == tr("已修复"))
         {
-            strLine.append(tr("%1 %2 %3 \r\n").arg(QDateTime::fromTime_t(task.date).toString("yyyy-MM-dd")).arg(task.id).arg(task.title));
+            if (bHasDate) {
+                strLine.append(tr("%1 %2 %3 \r\n").arg(QDateTime::fromTime_t(task.date).toString("yyyy-MM-dd")).arg(task.id).arg(task.title));
+            } else {
+                strLine.append(tr("%1 %2 \r\n").arg(task.id).arg(task.title));
+            }
         }
     }
     strLine.append("--------------------------------------------------------\r\n");
@@ -421,7 +442,7 @@ void COaDialog::outputResult(std::list<stTaskId>& listTask)
     file.write(ba, ba.size());
     file.close();
 
-    QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo("task.txt").absoluteFilePath()));
+    QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(strFileName).absoluteFilePath()));
 }
 
 void COaDialog::getBeginEndTime(uint& begin, uint& end)
@@ -438,6 +459,22 @@ void COaDialog::getBeginEndTime(uint& begin, uint& end)
     end = dtEnd.toTime_t();
 }
 
+int COaDialog::getCurrentQuarter()
+{
+    static const QString s_begin[] = {"/01/01", "/04/01", "/07/01", "/10/01"};
+    static const QString s_end[] = {"/03/31", "/06/30", "/09/30", "/12/31"};
+
+    int year = QDateTime::currentDateTime().date().year();
+    QString strCurrentDate = QDateTime::currentDateTime().toString("yyyy/MM/dd");
+    for (int i = 0; i < MAX_QUARTER; i++) {
+        QString strBegin = tr("%1%2").arg(year).arg(s_begin[i]);
+        QString strEnd = tr("%1%2").arg(year).arg(s_end[i]);
+        if (strCurrentDate >= strBegin && strCurrentDate <= strEnd) {
+            return i;
+        }
+    }
+}
+
 void COaDialog::initUI()
 {
     //ui init
@@ -448,6 +485,8 @@ void COaDialog::initUI()
     int year = QDate::currentDate().year();
     int index = year - BEGIN_YEAR;
     ui->comboYear->setCurrentIndex(index);
+
+    ui->comboQuarter->setCurrentIndex(getCurrentQuarter());
 
     updateUI();
 
@@ -512,6 +551,8 @@ void COaDialog::enableCtrl(bool bEnabled)
     ui->comboQaDepartment->setEnabled(bEnabled);
     ui->chkQa->setEnabled(bEnabled);
     ui->pushButton->setEnabled(bEnabled);
+    ui->chkHasDate->setEnabled(bEnabled);
+    ui->btnUpdate->setEnabled(bEnabled);
 }
 
 void COaDialog::readSettings()
@@ -522,8 +563,6 @@ void COaDialog::readSettings()
     QString strPwdEncode = settings.value("jiratools/pwd").toString();
     QString strPwdUncode = QByteArray::fromHex(QByteArray::fromBase64(strPwdEncode.toLatin1()));
     ui->linePwd->setText(strPwdUncode);
-    qDebug() << strPwdEncode;
-    qDebug() << strPwdUncode;
     if (settings.contains("jiratools/department")) {
         ui->comboDepartment->setCurrentIndex(settings.value("jiratools/department").toInt());
     }
@@ -532,6 +571,9 @@ void COaDialog::readSettings()
     }
     if (settings.contains("jiratools/qadepartment")) {
         ui->comboQaDepartment->setCurrentIndex(settings.value("jiratools/qadepartment").toInt());
+    }
+    if (settings.contains("jiratools/hasdate")) {
+        ui->chkHasDate->setChecked(settings.value("jiratools/hasdate").toBool());
     }
 }
 
@@ -545,9 +587,34 @@ void COaDialog::writeSettings()
     settings.setValue("jiratools/department", ui->comboDepartment->currentIndex());
     settings.setValue("jiratools/qa", ui->chkQa->isChecked());
     settings.setValue("jiratools/qadepartment", ui->comboQaDepartment->currentIndex());
+    settings.setValue("jiratools/hasdate", ui->chkHasDate->isChecked());
 }
 
 void COaDialog::on_chkQa_toggled(bool checked)
 {
     updateUI();
+}
+
+void COaDialog::on_btnUpdate_clicked()
+{
+    bool bHasUpdate = false;
+    QDir dir("\\\\share\\everyone\\guozs\\jiratools\\");
+    QStringList strFilterList;
+    strFilterList << "*.zip";
+    QStringList strFileNameList = dir.entryList(strFilterList);
+    for (int i = 0; i < strFileNameList.size(); i++) {
+        if (strFileNameList.at(i) > ZIP_FILENAME) {
+            bHasUpdate = true;
+            break;
+        }
+    }
+
+    if (bHasUpdate) {
+        QMessageBox::information(this, tr("提示"), tr("检测到更新，请前往下载！"));
+        QDesktopServices::openUrl(QUrl::fromLocalFile("file://///share/everyone/guozs/jiratools/"));
+    } else {
+        QMessageBox::information(this, tr("提示"), tr("已经是最新版本！"));
+    }
+
+    return;
 }

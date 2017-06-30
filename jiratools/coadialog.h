@@ -63,6 +63,8 @@ private slots:
 
     void on_chkQa_toggled(bool checked);
 
+    void on_btnUpdate_clicked();
+
 private:
     bool login();
     bool spider();
@@ -79,6 +81,7 @@ private:
     void getTaskInfo(std::list<stTaskId>& listTask);
     void outputResult(std::list<stTaskId>& listTask);
     void getBeginEndTime(uint& begin, uint& end);
+    int  getCurrentQuarter();
     void initUI();
     void updateUI();
     void enableCtrl(bool bEnabled);
@@ -90,6 +93,7 @@ private:
 
 private:
     static const int BEGIN_YEAR = 2010;
+    static const int MAX_QUARTER = 4; //4¸ö¼¾¶È
 
 private:
     Ui::COaDialog *ui;
