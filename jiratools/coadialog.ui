@@ -178,6 +178,9 @@
      <height>12</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>美术部可以选择所有</string>
+   </property>
    <property name="text">
     <string>部门：</string>
    </property>

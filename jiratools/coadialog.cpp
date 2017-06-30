@@ -13,8 +13,8 @@
 #include <QtGui>
 
 #define UNKNOWN_STATE "unknown"
-#define APP_VERSION "Jira工具 v1.3"
-#define ZIP_FILENAME tr("Jira工具v1.3.zip")
+#define APP_VERSION "Jira工具 v1.4"
+#define ZIP_FILENAME tr("Jira工具v1.4.zip")
 
 COaDialog::COaDialog(QWidget *parent) :
     QDialog(parent),
@@ -55,10 +55,10 @@ void COaDialog::on_pushButton_clicked()
         return;
     }
 
-    if (ui->comboDepartment->currentIndex() == 0) {
-        QMessageBox::warning(this, tr("提示"), tr("请选择部门"));
-        return;
-    }
+//    if (ui->comboDepartment->currentIndex() == 0) {
+//        QMessageBox::warning(this, tr("提示"), tr("请选择部门"));
+//        return;
+//    }
 
     if (ui->chkQa->isChecked() && ui->comboQaDepartment->currentIndex() == 0) {
         QMessageBox::warning(this, tr("提示"), tr("QA请选择部门"));
@@ -360,7 +360,7 @@ void COaDialog::filterData(const QString &strHead, std::list<stTaskId>& listTask
     listTask.clear();
     for (std::map<QString, uint>::iterator it = m_mapTask.begin(); it != m_mapTask.end(); ++it)
     {
-        if (it->second >= begin && it->second <= end && it->first.startsWith(strHead))
+        if (it->second >= begin && it->second <= end && (tr("所有") == strHead || it->first.startsWith(strHead)))
         {
             listTask.push_back(stTaskId(it->first, it->second));
         }
@@ -517,7 +517,7 @@ void COaDialog::initUI()
     m_mapDepartment[tr("行政部")] = "ADMINISTRATION";
     m_mapDepartment[tr("财务部")] = "FINANCIAL";
 
-    ui->comboDepartment->addItem(tr("无"));
+    ui->comboDepartment->addItem(tr("所有"));
     for (auto it : m_mapDepartment) {
         ui->comboDepartment->addItem(it.first);
     }
