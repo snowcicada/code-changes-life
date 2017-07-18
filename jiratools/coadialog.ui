@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>224</width>
-    <height>291</height>
+    <height>330</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -94,7 +94,7 @@
     <string>年份：</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_5">
+  <widget class="QLabel" name="labelQuarter">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -299,8 +299,54 @@
     <string>检查更新</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="btnMyTask">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>290</y>
+     <width>71</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>查看我的单子（网页版）</string>
+   </property>
+   <property name="text">
+    <string>我的单子</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnSuggest">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>290</y>
+     <width>71</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>查看我的单子（网页版）</string>
+   </property>
+   <property name="text">
+    <string>提建议</string>
+   </property>
+  </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>lineUser</tabstop>
+  <tabstop>linePwd</tabstop>
+  <tabstop>comboYear</tabstop>
+  <tabstop>comboQuarter</tabstop>
+  <tabstop>comboDepartment</tabstop>
+  <tabstop>chkQa</tabstop>
+  <tabstop>comboQaDepartment</tabstop>
+  <tabstop>chkHasDate</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>btnUpdate</tabstop>
+  <tabstop>btnMyTask</tabstop>
+  <tabstop>btnSuggest</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

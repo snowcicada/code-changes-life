@@ -13,8 +13,9 @@
 #include <QtGui>
 
 #define UNKNOWN_STATE "unknown"
-#define APP_VERSION "Jira工具 v1.4"
-#define ZIP_FILENAME tr("Jira工具v1.4.zip")
+#define APP_VERSION "Jira工具 v1.5"
+#define ZIP_FILENAME tr("Jira工具v1.5.zip")
+#define MY_TASK_URL "http://jira.woobest.com/secure/IssueNavigator.jspa?mode=hide&requestId=11559"
 
 COaDialog::COaDialog(QWidget *parent) :
     QDialog(parent),
@@ -80,6 +81,7 @@ void COaDialog::on_pushButton_clicked()
     {
         if (!spider())
         {
+            enableCtrl(true);
             return;
         }
     }
@@ -87,6 +89,7 @@ void COaDialog::on_pushButton_clicked()
     {
         if (!spiderQa())
         {
+            enableCtrl(true);
             return;
         }
     }
@@ -122,7 +125,7 @@ bool COaDialog::login()
         return false;
     }
 
-    bRet = m_curl.Get("http://jira.woobest.com/secure/IssueNavigator.jspa?mode=hide&requestId=11559", strHtml);
+    bRet = m_curl.Get(MY_TASK_URL, strHtml);
     if (!bRet || strHtml.indexOf("results-count-total") == -1)
     {
         return false;
@@ -136,7 +139,7 @@ bool COaDialog::spider()
     QString strHtml;
 
     //first visit my jira
-    bRet = m_curl.Get("http://jira.woobest.com/secure/IssueNavigator.jspa?mode=hide&requestId=11559", strHtml);
+    bRet = m_curl.Get(MY_TASK_URL, strHtml);
     if (!bRet)
     {
         return false;
@@ -423,7 +426,7 @@ void COaDialog::outputResult(std::list<stTaskId>& listTask)
         return;
     }
 
-    QString strLine;
+    QString strLine, strTmp;
     bool bHasDate = ui->chkHasDate->isChecked();
     for (std::list<stTaskId>::iterator it = listTask.begin(); it != listTask.end(); ++it)
     {
@@ -431,9 +434,15 @@ void COaDialog::outputResult(std::list<stTaskId>& listTask)
         if (task.state == tr("已修复"))
         {
             if (bHasDate) {
-                strLine.append(tr("%1 %2 %3 \r\n").arg(QDateTime::fromTime_t(task.date).toString("yyyy-MM-dd")).arg(task.id).arg(task.title));
+                strTmp = tr("%1 %2 %3").arg(QDateTime::fromTime_t(task.date).toString("yyyy-MM-dd")).arg(task.id).arg(task.title);
+                strTmp = QTextDocumentFragment::fromHtml(strTmp).toPlainText() + " \r\n";
+                strLine.append(strTmp);
+//                strLine.append(tr("%1 %2 %3 \r\n").arg(QDateTime::fromTime_t(task.date).toString("yyyy-MM-dd")).arg(task.id).arg(task.title));
             } else {
-                strLine.append(tr("%1 %2 \r\n").arg(task.id).arg(task.title));
+                strTmp = tr("%1 %2 \r\n").arg(task.id).arg(task.title);
+                strTmp = QTextDocumentFragment::fromHtml(strTmp).toPlainText() + " \r\n";
+                strLine.append(strTmp);
+//                strLine.append(tr("%1 %2 \r\n").arg(task.id).arg(task.title));
             }
         }
     }
@@ -475,6 +484,21 @@ int COaDialog::getCurrentQuarter()
     }
 }
 
+QString COaDialog::getQuarterTip()
+{
+    static const QString s_begin[] = {"01/01", "04/01", "07/01", "10/01"};
+    static const QString s_end[] = {"03/31", "06/30", "09/30", "12/31"};
+
+    QString strText;
+    for (int i = 0; i < MAX_QUARTER; i++) {
+        strText.append(tr("第%1季度 %2 - %3").arg(i + 1).arg(s_begin[i]).arg(s_end[i]));
+        if (i != MAX_QUARTER - 1) {
+            strText.append("\r\n");
+        }
+    }
+    return strText;
+}
+
 void COaDialog::initUI()
 {
     //ui init
@@ -487,6 +511,10 @@ void COaDialog::initUI()
     ui->comboYear->setCurrentIndex(index);
 
     ui->comboQuarter->setCurrentIndex(getCurrentQuarter());
+
+    QString strQuarter = getQuarterTip();
+    ui->labelQuarter->setToolTip(strQuarter);
+    ui->comboQuarter->setToolTip(strQuarter);
 
     updateUI();
 
@@ -545,6 +573,8 @@ void COaDialog::updateUI()
 
 void COaDialog::enableCtrl(bool bEnabled)
 {
+    ui->lineUser->setEnabled(bEnabled);
+    ui->linePwd->setEnabled(bEnabled);
     ui->comboQuarter->setEnabled(bEnabled);
     ui->comboYear->setEnabled(bEnabled);
     ui->comboDepartment->setEnabled(bEnabled);
@@ -553,6 +583,8 @@ void COaDialog::enableCtrl(bool bEnabled)
     ui->pushButton->setEnabled(bEnabled);
     ui->chkHasDate->setEnabled(bEnabled);
     ui->btnUpdate->setEnabled(bEnabled);
+    ui->btnMyTask->setEnabled(bEnabled);
+    ui->btnSuggest->setEnabled(bEnabled);
 }
 
 void COaDialog::readSettings()
@@ -617,4 +649,15 @@ void COaDialog::on_btnUpdate_clicked()
     }
 
     return;
+}
+
+void COaDialog::on_btnMyTask_clicked()
+{
+    QDesktopServices::openUrl(QUrl(MY_TASK_URL));
+}
+
+void COaDialog::on_btnSuggest_clicked()
+{
+    QUrl url((tr("mailto:guozs@woobest.com?subject=Make a suggestion by %1&body=Please make a suggestion!").arg(ui->lineUser->text())));
+    QDesktopServices::openUrl(url);
 }

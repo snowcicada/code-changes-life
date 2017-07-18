@@ -65,6 +65,10 @@ private slots:
 
     void on_btnUpdate_clicked();
 
+    void on_btnMyTask_clicked();
+
+    void on_btnSuggest_clicked();
+
 private:
     bool login();
     bool spider();
@@ -82,6 +86,7 @@ private:
     void outputResult(std::list<stTaskId>& listTask);
     void getBeginEndTime(uint& begin, uint& end);
     int  getCurrentQuarter();
+    QString getQuarterTip();
     void initUI();
     void updateUI();
     void enableCtrl(bool bEnabled);
